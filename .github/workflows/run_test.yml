@@ -1,28 +1,40 @@
 name: Run autotests
 
-
 on:
   workflow_dispatch:
     inputs:
       deployment_target:
-        description: select tests to run
+        description: "Select tests to run"
         required: true
         type: choice
         default: all
         options:
           - all
+          - smoke
+          - regression
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
     name: Tests
     steps:
       - name: Copy source code
-        uses: action/checkout@v4
+        uses: actions/checkout@v4
+
       - name: Set up Python env
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - name: install dependencies
-        run: pip install -r requirrements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
       - name: Run tests
-        run: pytest -v
+        run: |
+          if [ "${{ github.event.inputs.deployment_target }}" == "all" ]; then
+            pytest -v
+          elif [ "${{ github.event.inputs.deployment_target }}" == "smoke" ]; then
+            pytest -v -m smoke
+          elif [ "${{ github.event.inputs.deployment_target }}" == "regression" ]; then
+            pytest -v -m regression
+          fi
